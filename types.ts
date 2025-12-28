@@ -16,6 +16,14 @@ export interface CartItem extends Product {
 
 export type OrderStatus = 'Placed' | 'Packed' | 'Shipped' | 'Out for Delivery' | 'Delivered' | 'Cancelled';
 
+export interface OrderTimelineItem {
+  status: OrderStatus;
+  date: string;
+  time: string;
+  location: string;
+  description: string;
+}
+
 export interface Order {
   id: string;
   date: string;
@@ -27,6 +35,8 @@ export interface Order {
   trackingId?: string;
   deliveryPartner?: string;
   estimatedDelivery?: string;
+  timeline?: OrderTimelineItem[];
+  customerPhone?: string; // To show in confirmation message
 }
 
 export interface Testimonial {

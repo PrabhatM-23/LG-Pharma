@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, ArrowRight, ShieldCheck, QrCode, Check, ArrowLeft, CreditCard, Wallet, Banknote, Truck } from 'lucide-react';
-import { CartItem, Order } from '../types';
+import { X, Trash2, Plus, Minus, ArrowRight, ShieldCheck, QrCode, Check, ArrowLeft, CreditCard, Wallet, Banknote, Truck, MessageCircle, Smartphone } from 'lucide-react';
+import { CartItem, Order, OrderTimelineItem } from '../types';
 import { COMPANY_INFO } from '../data';
 
 interface CartModalProps {
@@ -50,12 +50,32 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
 
   const completeOrder = (paymentId?: string) => {
     // Generate Delivery info
+    const now = new Date();
     const deliveryDate = new Date();
     deliveryDate.setDate(deliveryDate.getDate() + 5);
 
+    // Initial Timeline
+    const initialTimeline: OrderTimelineItem[] = [
+      {
+        status: 'Placed',
+        date: now.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
+        time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        location: 'Online',
+        description: 'Order placed successfully'
+      },
+      // Simulate "Packed" for demo purposes
+      {
+         status: 'Packed',
+         date: now.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
+         time: new Date(now.getTime() + 1000 * 60 * 30).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+         location: 'Warehouse, Varanasi',
+         description: 'Order packed and ready for dispatch'
+      }
+    ];
+
     const newOrder: Order = {
       id: `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
-      date: new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }),
+      date: now.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }),
       items: [...cart],
       total: grandTotal,
       status: 'Placed',
@@ -63,22 +83,29 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
       paymentId: paymentId,
       trackingId: `TRK${Math.random().toString(36).substring(7).toUpperCase()}`,
       deliveryPartner: 'Express Herbal Logistics',
-      estimatedDelivery: deliveryDate.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })
+      estimatedDelivery: deliveryDate.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' }),
+      timeline: initialTimeline,
+      customerPhone: formData.phone
     };
     
     addOrder(newOrder);
 
     setStep('success');
+    // Don't auto-close immediately so user can read the confirmation message
     setTimeout(() => {
-      clearCart();
-      setStep('cart');
-      setTxnId('');
-      setFormData({ name: '', phone: '', address: '' });
-      setSelectedMethod(null);
-      setCardDetails({ number: '', expiry: '', cvv: '', name: '' });
-      onClose();
+       // Optional: Auto close or let user close
     }, 4000);
   };
+
+  const handleCloseSuccess = () => {
+    clearCart();
+    setStep('cart');
+    setTxnId('');
+    setFormData({ name: '', phone: '', address: '' });
+    setSelectedMethod(null);
+    setCardDetails({ number: '', expiry: '', cvv: '', name: '' });
+    onClose();
+  }
 
   const handleCardPayment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -343,13 +370,30 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
           )}
 
           {step === 'success' && (
-            <div className="text-center py-12">
+            <div className="text-center py-8">
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 animate-bounce">
                 <Check size={40} strokeWidth={4} />
               </div>
               <h3 className="text-2xl font-bold text-slate-900 mb-2">Order Successful!</h3>
-              <p className="text-slate-600">Thank you for choosing Lakshmi Ganga Pharma.</p>
-              <p className="text-sm text-slate-500 mt-4">Redirecting to home...</p>
+              <p className="text-slate-600 mb-4">Thank you for choosing Lakshmi Ganga Pharma.</p>
+              
+              {/* WhatsApp/SMS Simulation Message */}
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 mx-2 text-left animate-pulse">
+                <div className="flex items-center gap-2 mb-2">
+                   <MessageCircle size={18} className="text-green-600" />
+                   <Smartphone size={18} className="text-blue-600" />
+                   <span className="font-bold text-slate-800 text-sm">Confirmation Sent</span>
+                </div>
+                <p className="text-xs text-slate-600">
+                   We have sent the order details, tracking ID, and tracking link to 
+                   <span className="font-bold text-slate-900 mx-1">{formData.phone}</span> 
+                   via WhatsApp and SMS.
+                </p>
+              </div>
+
+              <button onClick={handleCloseSuccess} className="w-full soft-3d-btn text-white py-3 rounded-xl font-bold shadow-lg">
+                Continue Shopping
+              </button>
             </div>
           )}
         </div>
