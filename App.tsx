@@ -92,7 +92,7 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <Layout cart={cart} cartOpen={cartOpen} setCartOpen={setCartOpen} wishlist={wishlist}>
+      <Layout cart={cart} cartOpen={cartOpen} setCartOpen={setCartOpen} wishlist={wishlist} orders={orders}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />

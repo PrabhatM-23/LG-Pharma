@@ -14,13 +14,19 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
+export type OrderStatus = 'Placed' | 'Packed' | 'Shipped' | 'Out for Delivery' | 'Delivered' | 'Cancelled';
+
 export interface Order {
   id: string;
   date: string;
   items: CartItem[];
   total: number;
-  status: 'Pending' | 'Processing' | 'Delivered' | 'Cancelled';
+  status: OrderStatus;
+  paymentMethod: 'UPI' | 'Card' | 'COD';
   paymentId?: string;
+  trackingId?: string;
+  deliveryPartner?: string;
+  estimatedDelivery?: string;
 }
 
 export interface Testimonial {

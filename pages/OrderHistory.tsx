@@ -1,11 +1,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Calendar, Clock, ArrowRight } from 'lucide-react';
-import { Order } from '../types';
+import { Package, Calendar, Clock, ArrowRight, Truck, CheckCircle, MapPin } from 'lucide-react';
+import { Order, OrderStatus } from '../types';
 
 interface OrderHistoryProps {
   orders: Order[];
 }
+
+const TrackingStep = ({ status, currentStatus, label, date }: { status: string, currentStatus: OrderStatus, label: string, date?: string }) => {
+  const steps = ['Placed', 'Packed', 'Shipped', 'Out for Delivery', 'Delivered'];
+  const currentIndex = steps.indexOf(currentStatus);
+  const thisIndex = steps.indexOf(status);
+  const isCompleted = thisIndex <= currentIndex;
+  const isCurrent = thisIndex === currentIndex;
+
+  return (
+    <div className="flex flex-col items-center relative z-10 w-20">
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+        isCompleted ? 'bg-brand-600 text-white' : 'bg-slate-200 text-slate-400'
+      } ${isCurrent ? 'ring-4 ring-brand-100' : ''}`}>
+        {isCompleted ? <CheckCircle size={16} /> : <div className="w-2 h-2 bg-slate-400 rounded-full"></div>}
+      </div>
+      <p className={`text-xs mt-2 text-center font-medium ${isCompleted ? 'text-slate-800' : 'text-slate-400'}`}>{label}</p>
+      {isCurrent && date && <p className="text-[10px] text-brand-600 font-bold">Est: {date}</p>}
+    </div>
+  );
+};
 
 export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders }) => {
   return (
@@ -60,6 +80,30 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders }) => {
                 
                 {/* Order Body */}
                 <div className="p-6">
+                  {/* Tracking System Visualization */}
+                  <div className="mb-8 bg-slate-50 rounded-xl p-6 border border-slate-100">
+                    <div className="flex items-center gap-2 mb-6 text-slate-700 font-bold">
+                        <Truck size={20} className="text-brand-600" />
+                        <span>Tracking: <span className="font-mono text-brand-700">{order.trackingId || 'N/A'}</span></span>
+                        <span className="text-sm font-normal text-slate-500 ml-2">via {order.deliveryPartner}</span>
+                    </div>
+                    
+                    <div className="relative flex justify-between">
+                       {/* Connecting Line */}
+                       <div className="absolute top-4 left-0 w-full h-1 bg-slate-200 -z-0"></div>
+                       <div 
+                         className="absolute top-4 left-0 h-1 bg-brand-500 -z-0 transition-all duration-500" 
+                         style={{ width: order.status === 'Placed' ? '10%' : order.status === 'Packed' ? '35%' : order.status === 'Shipped' ? '60%' : order.status === 'Out for Delivery' ? '85%' : '100%' }}
+                       ></div>
+
+                       <TrackingStep status="Placed" currentStatus={order.status} label="Ordered" date={order.date} />
+                       <TrackingStep status="Packed" currentStatus={order.status} label="Packed" />
+                       <TrackingStep status="Shipped" currentStatus={order.status} label="Shipped" />
+                       <TrackingStep status="Out for Delivery" currentStatus={order.status} label="Out for Delivery" />
+                       <TrackingStep status="Delivered" currentStatus={order.status} label="Delivered" date={order.estimatedDelivery} />
+                    </div>
+                  </div>
+
                   <div className="space-y-4">
                     {order.items.map((item, idx) => (
                       <div key={idx} className="flex gap-4 items-center">
@@ -77,11 +121,17 @@ export const OrderHistory: React.FC<OrderHistoryProps> = ({ orders }) => {
                     ))}
                   </div>
                   
-                  {order.paymentId && (
-                     <div className="mt-6 pt-4 border-t border-slate-100 text-sm text-slate-500 flex items-center gap-2">
-                       <Clock size={14} /> Payment Ref: <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700">{order.paymentId}</span>
+                  <div className="mt-6 pt-4 border-t border-slate-100 text-sm text-slate-500 flex flex-wrap gap-4">
+                     {order.paymentId && (
+                        <div className="flex items-center gap-2">
+                           <Clock size={14} /> Payment Ref: <span className="font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700">{order.paymentId}</span>
+                        </div>
+                     )}
+                     <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${order.paymentMethod === 'COD' ? 'bg-orange-500' : 'bg-green-500'}`}></div>
+                        Payment Method: <span className="font-bold text-slate-700">{order.paymentMethod}</span>
                      </div>
-                  )}
+                  </div>
                 </div>
               </div>
             ))}

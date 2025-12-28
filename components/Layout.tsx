@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Search, Phone, Mail, MapPin, Heart, Package } from 'lucide-react';
 import { COMPANY_INFO } from '../data';
-import { CartItem, Product } from '../types';
+import { CartItem, Product, Order } from '../types';
+import { ChatBot } from './ChatBot';
+import { PRODUCTS } from '../data'; // Access full product list for bot context
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,9 +12,10 @@ interface LayoutProps {
   cartOpen: boolean;
   setCartOpen: (open: boolean) => void;
   wishlist: Product[];
+  orders: Order[];
 }
 
-export const Layout: React.FC<LayoutProps> = ({ children, cart, cartOpen, setCartOpen, wishlist }) => {
+export const Layout: React.FC<LayoutProps> = ({ children, cart, cartOpen, setCartOpen, wishlist, orders }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
@@ -131,6 +134,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, cart, cartOpen, setCar
       <main className="flex-grow">
         {children}
       </main>
+
+      {/* AI Chat Bot */}
+      <ChatBot orders={orders} products={PRODUCTS} />
 
       {/* Footer */}
       <footer className="bg-slate-900 text-slate-300 pt-16 pb-8">

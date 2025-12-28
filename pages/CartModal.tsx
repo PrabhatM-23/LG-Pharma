@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, ArrowRight, ShieldCheck, QrCode, Check, ArrowLeft } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ArrowRight, ShieldCheck, QrCode, Check, ArrowLeft, CreditCard, Wallet, Banknote, Truck } from 'lucide-react';
 import { CartItem, Order } from '../types';
 import { COMPANY_INFO } from '../data';
 
@@ -13,10 +13,18 @@ interface CartModalProps {
   addOrder: (order: Order) => void;
 }
 
+type CheckoutStep = 'cart' | 'details' | 'payment-method' | 'payment-execute' | 'success';
+type PaymentMethod = 'UPI' | 'Card' | 'COD';
+
 export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, updateQuantity, removeFromCart, clearCart, addOrder }) => {
-  const [step, setStep] = useState<'cart' | 'details' | 'payment' | 'success'>('cart');
+  const [step, setStep] = useState<CheckoutStep>('cart');
   const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  
+  // Payment states
   const [txnId, setTxnId] = useState('');
+  const [cardDetails, setCardDetails] = useState({ number: '', expiry: '', cvv: '', name: '' });
+  const [isProcessing, setIsProcessing] = useState(false);
 
   if (!isOpen) return null;
 
@@ -26,39 +34,74 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
 
   const handleBack = () => {
     if (step === 'details') setStep('cart');
-    if (step === 'payment') setStep('details');
+    if (step === 'payment-method') setStep('details');
+    if (step === 'payment-execute') setStep('payment-method');
   };
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const submitDetails = (e: React.FormEvent) => {
     e.preventDefault();
-    setStep('payment');
+    setStep('payment-method');
   };
 
-  const verifyPayment = (e: React.FormEvent) => {
+  const selectPaymentMethod = (method: PaymentMethod) => {
+    setSelectedMethod(method);
+    setStep('payment-execute');
+  };
+
+  const completeOrder = (paymentId?: string) => {
+    // Generate Delivery info
+    const deliveryDate = new Date();
+    deliveryDate.setDate(deliveryDate.getDate() + 5);
+
+    const newOrder: Order = {
+      id: `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
+      date: new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }),
+      items: [...cart],
+      total: grandTotal,
+      status: 'Placed',
+      paymentMethod: selectedMethod || 'COD',
+      paymentId: paymentId,
+      trackingId: `TRK${Math.random().toString(36).substring(7).toUpperCase()}`,
+      deliveryPartner: 'Express Herbal Logistics',
+      estimatedDelivery: deliveryDate.toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })
+    };
+    
+    addOrder(newOrder);
+
+    setStep('success');
+    setTimeout(() => {
+      clearCart();
+      setStep('cart');
+      setTxnId('');
+      setFormData({ name: '', phone: '', address: '' });
+      setSelectedMethod(null);
+      setCardDetails({ number: '', expiry: '', cvv: '', name: '' });
+      onClose();
+    }, 4000);
+  };
+
+  const handleCardPayment = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate verification
+    setIsProcessing(true);
+    // Simulate gateway delay
+    setTimeout(() => {
+      setIsProcessing(false);
+      completeOrder(`TXN_CARD_${Math.random().toString(36).substring(7)}`);
+    }, 2000);
+  };
+
+  const handleCODConfirm = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+        setIsProcessing(false);
+        completeOrder();
+    }, 1500);
+  };
+
+  const verifyUPI = (e: React.FormEvent) => {
+    e.preventDefault();
     if (txnId.length > 5) {
-      
-      // Create new Order object
-      const newOrder: Order = {
-        id: `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
-        date: new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }),
-        items: [...cart],
-        total: grandTotal,
-        status: 'Processing',
-        paymentId: txnId
-      };
-      
-      addOrder(newOrder);
-
-      setStep('success');
-      setTimeout(() => {
-        clearCart();
-        setStep('cart');
-        setTxnId('');
-        setFormData({ name: '', phone: '', address: '' });
-        onClose();
-      }, 4000);
+      completeOrder(txnId);
     } else {
       alert("Please enter a valid Transaction ID");
     }
@@ -73,7 +116,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
       <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300">
         <div className="p-4 border-b flex justify-between items-center bg-slate-50">
           <div className="flex items-center gap-3">
-            {(step === 'details' || step === 'payment') && (
+            {step !== 'cart' && step !== 'success' && (
               <button 
                 onClick={handleBack} 
                 className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-600"
@@ -85,7 +128,8 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
             <h2 className="text-lg font-bold text-slate-900">
               {step === 'cart' && 'Shopping Cart'}
               {step === 'details' && 'Shipping Details'}
-              {step === 'payment' && 'Secure Payment'}
+              {step === 'payment-method' && 'Select Payment'}
+              {step === 'payment-execute' && 'Complete Payment'}
               {step === 'success' && 'Order Placed'}
             </h2>
           </div>
@@ -140,7 +184,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
           )}
 
           {step === 'details' && (
-            <form id="shipping-form" onSubmit={handlePlaceOrder} className="space-y-4">
+            <form id="shipping-form" onSubmit={submitDetails} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
                 <input required type="text" className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:border-brand-500" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
@@ -156,7 +200,52 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
             </form>
           )}
 
-          {step === 'payment' && (
+          {step === 'payment-method' && (
+            <div className="space-y-4">
+               <p className="text-slate-600 text-sm mb-4">Choose how you would like to pay for your order of <span className="font-bold">₹{grandTotal}</span>.</p>
+               
+               <button onClick={() => selectPaymentMethod('UPI')} className="w-full bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:border-brand-500 hover:bg-brand-50 transition-all group">
+                 <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 group-hover:bg-brand-200 group-hover:text-brand-700">
+                      <QrCode size={20} />
+                    </div>
+                    <div className="text-left">
+                       <p className="font-bold text-slate-800">UPI / QR Code</p>
+                       <p className="text-xs text-slate-500">Google Pay, PhonePe, Paytm</p>
+                    </div>
+                 </div>
+                 <ArrowRight size={18} className="text-slate-300 group-hover:text-brand-600" />
+               </button>
+
+               <button onClick={() => selectPaymentMethod('Card')} className="w-full bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:border-brand-500 hover:bg-brand-50 transition-all group">
+                 <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 group-hover:bg-brand-200 group-hover:text-brand-700">
+                      <CreditCard size={20} />
+                    </div>
+                    <div className="text-left">
+                       <p className="font-bold text-slate-800">Credit / Debit Card</p>
+                       <p className="text-xs text-slate-500">Visa, Mastercard, RuPay (via Razorpay/SBI)</p>
+                    </div>
+                 </div>
+                 <ArrowRight size={18} className="text-slate-300 group-hover:text-brand-600" />
+               </button>
+
+               <button onClick={() => selectPaymentMethod('COD')} className="w-full bg-white border border-slate-200 p-4 rounded-xl flex items-center justify-between hover:border-brand-500 hover:bg-brand-50 transition-all group">
+                 <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-600 group-hover:bg-brand-200 group-hover:text-brand-700">
+                      <Banknote size={20} />
+                    </div>
+                    <div className="text-left">
+                       <p className="font-bold text-slate-800">Cash on Delivery</p>
+                       <p className="text-xs text-slate-500">Pay when you receive the order</p>
+                    </div>
+                 </div>
+                 <ArrowRight size={18} className="text-slate-300 group-hover:text-brand-600" />
+               </button>
+            </div>
+          )}
+
+          {step === 'payment-execute' && selectedMethod === 'UPI' && (
             <div className="space-y-6 text-center">
               <div className="bg-brand-50 border border-brand-100 rounded-2xl p-6">
                 <p className="text-sm text-slate-600 mb-2">Total Amount to Pay</p>
@@ -167,10 +256,9 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
                 <QrCode size={120} className="text-slate-800 mb-4" />
                 <p className="font-mono bg-slate-100 px-3 py-1 rounded text-sm mb-2 select-all">{COMPANY_INFO.upiId}</p>
                 <p className="text-xs text-slate-500">Scan QR or use UPI ID to pay</p>
-                <p className="text-xs font-bold text-brand-600 mt-2">Lakshmi Ganga (L.G) Pharma</p>
               </div>
 
-              <form onSubmit={verifyPayment} className="text-left">
+              <form onSubmit={verifyUPI} className="text-left">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Enter UPI Transaction ID (Reference No)</label>
                 <input 
                   required 
@@ -183,6 +271,75 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
                 <button type="submit" className="w-full soft-3d-btn text-white py-3 rounded-xl font-bold shadow-lg">Verify & Complete Order</button>
               </form>
             </div>
+          )}
+
+          {step === 'payment-execute' && selectedMethod === 'Card' && (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-5 rounded-2xl shadow-lg mb-4 relative overflow-hidden">
+                <div className="absolute right-[-20px] top-[-20px] w-24 h-24 bg-white opacity-10 rounded-full"></div>
+                <div className="flex justify-between mb-6">
+                  <span className="font-bold text-lg">SBI Bank / Razorpay</span>
+                  <Wallet size={24} />
+                </div>
+                <div className="mb-4">
+                   <div className="text-xs opacity-70 mb-1">Card Number</div>
+                   <div className="text-lg tracking-wider font-mono">{cardDetails.number || '#### #### #### ####'}</div>
+                </div>
+                <div className="flex justify-between">
+                   <div>
+                     <div className="text-xs opacity-70 mb-1">Card Holder</div>
+                     <div className="font-medium">{cardDetails.name || 'YOUR NAME'}</div>
+                   </div>
+                   <div>
+                     <div className="text-xs opacity-70 mb-1">Expires</div>
+                     <div className="font-medium">{cardDetails.expiry || 'MM/YY'}</div>
+                   </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleCardPayment} className="space-y-3">
+                <input 
+                  required type="text" placeholder="Card Number (16 digits)" maxLength={16}
+                  className="w-full border p-3 rounded-lg outline-none focus:border-brand-500"
+                  value={cardDetails.number} onChange={e => setCardDetails({...cardDetails, number: e.target.value.replace(/\D/g, '')})}
+                />
+                <div className="flex gap-3">
+                   <input 
+                    required type="text" placeholder="MM/YY" maxLength={5}
+                    className="w-1/2 border p-3 rounded-lg outline-none focus:border-brand-500"
+                    value={cardDetails.expiry} onChange={e => setCardDetails({...cardDetails, expiry: e.target.value})}
+                  />
+                   <input 
+                    required type="password" placeholder="CVV" maxLength={3}
+                    className="w-1/2 border p-3 rounded-lg outline-none focus:border-brand-500"
+                    value={cardDetails.cvv} onChange={e => setCardDetails({...cardDetails, cvv: e.target.value.replace(/\D/g, '')})}
+                  />
+                </div>
+                <input 
+                  required type="text" placeholder="Card Holder Name"
+                  className="w-full border p-3 rounded-lg outline-none focus:border-brand-500"
+                  value={cardDetails.name} onChange={e => setCardDetails({...cardDetails, name: e.target.value})}
+                />
+                
+                <button disabled={isProcessing} type="submit" className="w-full bg-blue-700 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-800 disabled:opacity-70 transition-colors mt-2">
+                  {isProcessing ? 'Processing Secure Payment...' : `Pay ₹${grandTotal}`}
+                </button>
+              </form>
+              <p className="text-xs text-center text-slate-400 mt-2 flex items-center justify-center gap-1"><ShieldCheck size={12}/> Secured by 256-bit Encryption</p>
+            </div>
+          )}
+
+          {step === 'payment-execute' && selectedMethod === 'COD' && (
+             <div className="text-center py-6">
+                <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600">
+                  <Truck size={40} />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Cash on Delivery</h3>
+                <p className="text-slate-600 mb-6 px-4">You will pay <span className="font-bold">₹{grandTotal}</span> in cash to the delivery agent upon receiving your order.</p>
+                <button onClick={handleCODConfirm} disabled={isProcessing} className="w-full soft-3d-btn text-white py-3 rounded-xl font-bold shadow-lg">
+                  {isProcessing ? 'Placing Order...' : 'Confirm Order'}
+                </button>
+             </div>
           )}
 
           {step === 'success' && (
@@ -198,7 +355,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
         </div>
 
         {/* Footer actions */}
-        {step !== 'success' && step !== 'payment' && cart.length > 0 && (
+        {step !== 'success' && step !== 'payment-execute' && step !== 'payment-method' && cart.length > 0 && (
           <div className="border-t bg-slate-50 p-6 space-y-4">
             <div className="flex justify-between text-slate-600">
               <span>Subtotal</span>
@@ -219,7 +376,7 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
               </button>
             ) : (
               <button form="shipping-form" type="submit" className="w-full soft-3d-btn text-white py-4 rounded-xl font-bold shadow-lg hover:-translate-y-1 transition-all">
-                Proceed to Pay ₹{grandTotal}
+                Proceed to Payment
               </button>
             )}
           </div>
