@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Check, Droplet, Shield, Sprout, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Plus, Check, Droplet, Shield, Sprout, ShoppingCart, Heart } from 'lucide-react';
 import { PRODUCTS } from '../data';
 import { CartItem, Product } from '../types';
 
@@ -8,12 +8,15 @@ interface ProductDetailProps {
   addToCart: (product: Product) => void;
   cart: CartItem[];
   setCartOpen: (open: boolean) => void;
+  wishlist: Product[];
+  toggleWishlist: (product: Product) => void;
 }
 
-export const ProductDetail: React.FC<ProductDetailProps> = ({ addToCart, cart, setCartOpen }) => {
+export const ProductDetail: React.FC<ProductDetailProps> = ({ addToCart, cart, setCartOpen, wishlist, toggleWishlist }) => {
   const { id } = useParams<{ id: string }>();
   const product = PRODUCTS.find(p => p.id === id);
   const isInCart = product ? cart.some(item => item.id === item.id) : false;
+  const isWishlisted = product ? wishlist.some(item => item.id === product.id) : false;
 
   if (!product) return <div className="p-20 text-center">Product not found</div>;
 
@@ -33,7 +36,14 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ addToCart, cart, s
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
             {/* Image Section */}
             <div className="space-y-6">
-              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-3xl p-8 aspect-square flex items-center justify-center">
+              <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-3xl p-8 aspect-square flex items-center justify-center relative">
+                 <button 
+                  onClick={() => toggleWishlist(product)}
+                  className="absolute top-4 right-4 p-3 bg-white rounded-full shadow-md hover:scale-110 transition-transform"
+                  title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                >
+                  <Heart size={24} className={isWishlisted ? "fill-red-500 text-red-500" : "text-slate-300"} />
+                </button>
                 <img src={product.image} alt={product.name} className="w-full h-full object-contain mix-blend-multiply drop-shadow-2xl" />
               </div>
               <div className="grid grid-cols-3 gap-4">

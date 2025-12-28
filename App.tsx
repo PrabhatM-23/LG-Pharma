@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Products } from './pages/Products';
 import { ProductDetail } from './pages/ProductDetail';
 import { CartModal } from './pages/CartModal';
+import { Wishlist } from './pages/Wishlist';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Admin } from './pages/Admin';
@@ -18,6 +19,28 @@ const Blog = () => <div className="p-20 text-center font-bold text-2xl text-slat
 const App: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [wishlist, setWishlist] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem('lg-pharma-wishlist');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to load wishlist", e);
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('lg-pharma-wishlist', JSON.stringify(wishlist));
+  }, [wishlist]);
+
+  const toggleWishlist = (product: Product) => {
+    setWishlist(prev => {
+      if (prev.find(item => item.id === product.id)) {
+        return prev.filter(item => item.id !== product.id);
+      }
+      return [...prev, product];
+    });
+  };
 
   const addToCart = (product: Product) => {
     setCart(prev => {
@@ -47,12 +70,13 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <Layout cart={cart} cartOpen={cartOpen} setCartOpen={setCartOpen}>
+      <Layout cart={cart} cartOpen={cartOpen} setCartOpen={setCartOpen} wishlist={wishlist}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
-          <Route path="/products" element={<Products addToCart={addToCart} cart={cart} />} />
-          <Route path="/products/:id" element={<ProductDetail addToCart={addToCart} cart={cart} setCartOpen={setCartOpen} />} />
+          <Route path="/products" element={<Products addToCart={addToCart} cart={cart} wishlist={wishlist} toggleWishlist={toggleWishlist} />} />
+          <Route path="/products/:id" element={<ProductDetail addToCart={addToCart} cart={cart} setCartOpen={setCartOpen} wishlist={wishlist} toggleWishlist={toggleWishlist} />} />
+          <Route path="/wishlist" element={<Wishlist wishlist={wishlist} toggleWishlist={toggleWishlist} addToCart={addToCart} cart={cart} />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/doctor-desk" element={<DoctorDesk />} />
           <Route path="/careers" element={<Careers />} />

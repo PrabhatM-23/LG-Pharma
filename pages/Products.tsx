@@ -1,16 +1,19 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Check } from 'lucide-react';
+import { Plus, Check, Heart } from 'lucide-react';
 import { PRODUCTS } from '../data';
 import { Product, CartItem } from '../types';
 
 interface ProductsProps {
   addToCart: (product: Product) => void;
   cart: CartItem[];
+  wishlist: Product[];
+  toggleWishlist: (product: Product) => void;
 }
 
-export const Products: React.FC<ProductsProps> = ({ addToCart, cart }) => {
+export const Products: React.FC<ProductsProps> = ({ addToCart, cart, wishlist, toggleWishlist }) => {
   const isInCart = (id: string) => cart.some(item => item.id === id);
+  const isInWishlist = (id: string) => wishlist.some(item => item.id === id);
 
   return (
     <div className="py-12 bg-slate-50 min-h-screen">
@@ -22,13 +25,23 @@ export const Products: React.FC<ProductsProps> = ({ addToCart, cart }) => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {PRODUCTS.map((product) => (
-            <div key={product.id} className="bg-white rounded-3xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col h-full border border-slate-100">
+            <div key={product.id} className="bg-white rounded-3xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col h-full border border-slate-100 relative">
               <div className="relative bg-slate-100 rounded-2xl overflow-hidden mb-6 aspect-square">
                  {product.isNew && (
                    <span className="absolute top-3 left-3 bg-brand-500 text-white text-xs font-bold px-3 py-1 rounded-full z-10">
                      New Arrival
                    </span>
                  )}
+                 <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      toggleWishlist(product);
+                    }}
+                    className="absolute top-3 right-3 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors z-20 group-hover:opacity-100 transition-opacity"
+                    title={isInWishlist(product.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                  >
+                    <Heart size={20} className={isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-slate-400"} />
+                 </button>
                 <img 
                   src={product.image} 
                   alt={product.name} 

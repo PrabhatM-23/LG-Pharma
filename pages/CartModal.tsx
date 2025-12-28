@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trash2, Plus, Minus, ArrowRight, ShieldCheck, QrCode, Check } from 'lucide-react';
+import { X, Trash2, Plus, Minus, ArrowRight, ShieldCheck, QrCode, Check, ArrowLeft } from 'lucide-react';
 import { CartItem } from '../types';
 import { COMPANY_INFO } from '../data';
 
@@ -22,6 +22,11 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
   const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const shipping = total > 500 ? 0 : 50;
   const grandTotal = total + shipping;
+
+  const handleBack = () => {
+    if (step === 'details') setStep('cart');
+    if (step === 'payment') setStep('details');
+  };
 
   const handlePlaceOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,13 +56,34 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
       {/* Slide-over panel */}
       <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col transform transition-transform duration-300">
         <div className="p-4 border-b flex justify-between items-center bg-slate-50">
-          <h2 className="text-lg font-bold text-slate-900">
-            {step === 'cart' && 'Shopping Cart'}
-            {step === 'details' && 'Shipping Details'}
-            {step === 'payment' && 'Secure Payment'}
-            {step === 'success' && 'Order Placed'}
-          </h2>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={20} /></button>
+          <div className="flex items-center gap-3">
+            {(step === 'details' || step === 'payment') && (
+              <button 
+                onClick={handleBack} 
+                className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-600"
+                aria-label="Go Back"
+              >
+                <ArrowLeft size={20} />
+              </button>
+            )}
+            <h2 className="text-lg font-bold text-slate-900">
+              {step === 'cart' && 'Shopping Cart'}
+              {step === 'details' && 'Shipping Details'}
+              {step === 'payment' && 'Secure Payment'}
+              {step === 'success' && 'Order Placed'}
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+             {step === 'cart' && cart.length > 0 && (
+                <button 
+                  onClick={() => { if(window.confirm('Are you sure you want to clear your cart?')) clearCart(); }} 
+                  className="text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-full transition-colors mr-1"
+                >
+                   Clear All
+                </button>
+             )}
+            <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={20} /></button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
