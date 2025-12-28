@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Trash2, Plus, Minus, ArrowRight, ShieldCheck, QrCode, Check, ArrowLeft } from 'lucide-react';
-import { CartItem } from '../types';
+import { CartItem, Order } from '../types';
 import { COMPANY_INFO } from '../data';
 
 interface CartModalProps {
@@ -10,9 +10,10 @@ interface CartModalProps {
   updateQuantity: (id: string, delta: number) => void;
   removeFromCart: (id: string) => void;
   clearCart: () => void;
+  addOrder: (order: Order) => void;
 }
 
-export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, updateQuantity, removeFromCart, clearCart }) => {
+export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, updateQuantity, removeFromCart, clearCart, addOrder }) => {
   const [step, setStep] = useState<'cart' | 'details' | 'payment' | 'success'>('cart');
   const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
   const [txnId, setTxnId] = useState('');
@@ -37,10 +38,25 @@ export const CartModal: React.FC<CartModalProps> = ({ isOpen, onClose, cart, upd
     e.preventDefault();
     // Simulate verification
     if (txnId.length > 5) {
+      
+      // Create new Order object
+      const newOrder: Order = {
+        id: `ORD-${Math.floor(100000 + Math.random() * 900000)}`,
+        date: new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' }),
+        items: [...cart],
+        total: grandTotal,
+        status: 'Processing',
+        paymentId: txnId
+      };
+      
+      addOrder(newOrder);
+
       setStep('success');
       setTimeout(() => {
         clearCart();
         setStep('cart');
+        setTxnId('');
+        setFormData({ name: '', phone: '', address: '' });
         onClose();
       }, 4000);
     } else {

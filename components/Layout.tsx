@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Menu, X, Search, Phone, Mail, MapPin, Heart } from 'lucide-react';
+import { ShoppingCart, Menu, X, Search, Phone, Mail, MapPin, Heart, Package } from 'lucide-react';
 import { COMPANY_INFO } from '../data';
 import { CartItem, Product } from '../types';
 
@@ -73,7 +73,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, cart, cartOpen, setCar
                 <Search size={18} className="text-slate-400" />
               </div>
 
-              <Link to="/wishlist" className="relative p-2 hover:bg-slate-100 rounded-full transition-colors text-brand-800">
+              <Link to="/orders" className="relative p-2 hover:bg-slate-100 rounded-full transition-colors text-brand-800" title="My Orders">
+                <Package size={24} />
+              </Link>
+
+              <Link to="/wishlist" className="relative p-2 hover:bg-slate-100 rounded-full transition-colors text-brand-800" title="My Wishlist">
                 <Heart size={24} />
                 {wishlist.length > 0 && (
                   <span className="absolute top-0 right-0 bg-brand-500 text-white text-[10px] font-bold h-5 w-5 flex items-center justify-center rounded-full shadow-sm">
@@ -85,6 +89,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, cart, cartOpen, setCar
               <button 
                 onClick={() => setCartOpen(true)}
                 className="relative p-2 hover:bg-slate-100 rounded-full transition-colors text-brand-800"
+                title="Cart"
               >
                 <ShoppingCart size={24} />
                 {cartItemCount > 0 && (
@@ -109,6 +114,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, cart, cartOpen, setCar
           <div className="md:hidden bg-white border-t p-4 flex flex-col gap-4 shadow-xl absolute w-full left-0 top-full">
             <Link to="/" className="text-lg font-medium text-slate-700 py-2 border-b border-slate-100">Home</Link>
             <Link to="/products" className="text-lg font-medium text-slate-700 py-2 border-b border-slate-100">Products</Link>
+            <Link to="/orders" className="text-lg font-medium text-slate-700 py-2 border-b border-slate-100 flex items-center gap-2">My Orders</Link>
             <Link to="/wishlist" className="text-lg font-medium text-slate-700 py-2 border-b border-slate-100 flex items-center gap-2">Wishlist <span className="bg-brand-100 text-brand-800 px-2 py-0.5 rounded-full text-xs">{wishlist.length}</span></Link>
             <Link to="/about" className="text-lg font-medium text-slate-700 py-2 border-b border-slate-100">About Us</Link>
             <Link to="/doctor-desk" className="text-lg font-medium text-slate-700 py-2 border-b border-slate-100">Research</Link>

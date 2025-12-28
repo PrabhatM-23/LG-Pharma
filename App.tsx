@@ -6,10 +6,11 @@ import { Products } from './pages/Products';
 import { ProductDetail } from './pages/ProductDetail';
 import { CartModal } from './pages/CartModal';
 import { Wishlist } from './pages/Wishlist';
+import { OrderHistory } from './pages/OrderHistory';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Admin } from './pages/Admin';
-import { CartItem, Product } from './types';
+import { CartItem, Product, Order } from './types';
 
 // Simple placeholders for static pages to save file count
 const DoctorDesk = () => <div className="p-20 text-center font-bold text-2xl text-slate-500">Doctor's Desk & Research Center (Coming Soon)</div>;
@@ -19,6 +20,8 @@ const Blog = () => <div className="p-20 text-center font-bold text-2xl text-slat
 const App: React.FC = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  
+  // Wishlist State
   const [wishlist, setWishlist] = useState<Product[]>(() => {
     try {
       const saved = localStorage.getItem('lg-pharma-wishlist');
@@ -29,9 +32,24 @@ const App: React.FC = () => {
     }
   });
 
+  // Orders State
+  const [orders, setOrders] = useState<Order[]>(() => {
+    try {
+      const saved = localStorage.getItem('lg-pharma-orders');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.error("Failed to load orders", e);
+      return [];
+    }
+  });
+
   useEffect(() => {
     localStorage.setItem('lg-pharma-wishlist', JSON.stringify(wishlist));
   }, [wishlist]);
+
+  useEffect(() => {
+    localStorage.setItem('lg-pharma-orders', JSON.stringify(orders));
+  }, [orders]);
 
   const toggleWishlist = (product: Product) => {
     setWishlist(prev => {
@@ -40,6 +58,10 @@ const App: React.FC = () => {
       }
       return [...prev, product];
     });
+  };
+
+  const addOrder = (order: Order) => {
+    setOrders(prev => [...prev, order]);
   };
 
   const addToCart = (product: Product) => {
@@ -77,6 +99,7 @@ const App: React.FC = () => {
           <Route path="/products" element={<Products addToCart={addToCart} cart={cart} wishlist={wishlist} toggleWishlist={toggleWishlist} />} />
           <Route path="/products/:id" element={<ProductDetail addToCart={addToCart} cart={cart} setCartOpen={setCartOpen} wishlist={wishlist} toggleWishlist={toggleWishlist} />} />
           <Route path="/wishlist" element={<Wishlist wishlist={wishlist} toggleWishlist={toggleWishlist} addToCart={addToCart} cart={cart} />} />
+          <Route path="/orders" element={<OrderHistory orders={orders} />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/doctor-desk" element={<DoctorDesk />} />
           <Route path="/careers" element={<Careers />} />
@@ -92,6 +115,7 @@ const App: React.FC = () => {
         updateQuantity={updateQuantity} 
         removeFromCart={removeFromCart} 
         clearCart={clearCart}
+        addOrder={addOrder}
       />
     </Router>
   );

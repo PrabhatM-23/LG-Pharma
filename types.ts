@@ -14,6 +14,15 @@ export interface CartItem extends Product {
   quantity: number;
 }
 
+export interface Order {
+  id: string;
+  date: string;
+  items: CartItem[];
+  total: number;
+  status: 'Pending' | 'Processing' | 'Delivered' | 'Cancelled';
+  paymentId?: string;
+}
+
 export interface Testimonial {
   id: number;
   text: string;
