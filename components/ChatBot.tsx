@@ -64,10 +64,12 @@ export const ChatBot: React.FC<ChatBotProps> = ({ orders, products }) => {
         5. Provide prices in Rupees (₹).
       `;
 
-      // Initialize Gemini
+      // Initialize Gemini with API Key from env
+      // Ensure we use the latest key if it was updated via aistudio
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-latest',
+        model: 'gemini-3-flash-preview',
         contents: userMessage,
         config: {
           systemInstruction: systemPrompt,
@@ -77,9 +79,24 @@ export const ChatBot: React.FC<ChatBotProps> = ({ orders, products }) => {
       const aiResponse = response.text || "I'm sorry, I couldn't process that request right now.";
       setMessages(prev => [...prev, { role: 'model', text: aiResponse }]);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI Error:", error);
-      // Fallback logic if API fails or key is missing
+      
+      // Handle "Requested entity was not found" which might indicate missing/invalid API key selection in specific environments
+      if (error.message?.includes("Requested entity was not found") || error.toString().includes("Requested entity was not found")) {
+        if ((window as any).aistudio && (window as any).aistudio.openSelectKey) {
+           try {
+             await (window as any).aistudio.openSelectKey();
+             setMessages(prev => [...prev, { role: 'model', text: "I've refreshed your access key. Please ask your question again." }]);
+             setIsLoading(false);
+             return;
+           } catch (keyError) {
+             console.error("Key selection failed", keyError);
+           }
+        }
+      }
+
+      // Fallback logic
       let fallbackResponse = "I am having trouble connecting to the server. ";
       const lowerInput = userMessage.toLowerCase();
       
